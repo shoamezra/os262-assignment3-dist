@@ -440,3 +440,72 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+// TASK1
+// Checks if a virtual address range is completely unmapped.
+int
+is_va_range_free(pagetable_t pagetable, uint64 va, int npages)
+{
+  if(npages <= 0)
+    return 0;
+
+  if(va % PGSIZE != 0)
+    return 0;
+
+  uint64 size = (uint64)npages * PGSIZE;
+  uint64 end = va + size;
+
+  // overflow check
+  if(end < va)
+    return 0;
+
+  // Don't collide with TRAPFRAME area.
+  if(end > TRAPFRAME)
+    return 0;
+
+  for(uint64 a = va; a < end; a += PGSIZE) {
+    pte_t *pte = walk(pagetable, a, 0);
+
+    if(pte != 0 && (*pte & PTE_V)) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+// Finds a contiguous free virtual address.
+uint64
+find_free_va_range(pagetable_t pagetable, uint64 start_va, int npages)
+{
+  if(npages <= 0)
+    return 0;
+  uint64 va = PGROUNDUP(start_va);
+  uint64 size = npages * PGSIZE;
+  
+  // Do not cross the kernel trapframe memory limit
+  while(va + size >= va && va + size <= TRAPFRAME) {
+    int collision_found = 0;
+    uint64 a;
+    
+    // Check the current window of pages
+    for(a = va; a < va + size; a += PGSIZE) {
+      pte_t *pte = walk(pagetable, a, 0);
+      
+      if(pte != 0 && (*pte & PTE_V)) {
+        collision_found = 1;
+        va = a + PGSIZE; 
+        break; // Stop checking the current window and start a new one from the next free one
+      }
+    }
+    
+    // the loop finished without hitting a collision
+    if(!collision_found) {
+      return va; 
+    }
+  }
+  
+  return 0; // No contiguous free range found in user space
+}
+
+

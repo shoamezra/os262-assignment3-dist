@@ -174,6 +174,9 @@ uint64          walkaddr(pagetable_t, uint64);
 int             copyout(pagetable_t, uint64, char *, uint64);
 int             copyin(pagetable_t, char *, uint64, uint64);
 int             copyinstr(pagetable_t, char *, uint64, uint64);
+//task1
+int             is_va_range_free(pagetable_t, uint64, int);
+uint64          find_free_va_range(pagetable_t, uint64, int);
 
 // plic.c
 void            plicinit(void);
@@ -190,6 +193,9 @@ void            virtio_disk_intr(void);
 void            virtio_gpu_init(void);
 void            virtio_gpu_commit(void);
 void            display_daemon(void);
+//task1
+int             virtio_gpu_map(pagetable_t, uint64);
+int             virtio_gpu_npages(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

@@ -116,5 +116,10 @@ sys_flip_display(void)
 uint64
 sys_map_display(void)
 {
-  return -1;
+  uint64 addr;
+  argint(0,&addr);
+
+  if
 }
+
+

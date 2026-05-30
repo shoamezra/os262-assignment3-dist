@@ -578,3 +578,34 @@ void display_daemon(void)
         acquire(&tickslock);
     }
 }
+
+// TASK1
+// Map the kernel framebuffer pages into a user process page table.
+int
+virtio_gpu_map(pagetable_t pagetable, uint64 va)
+{
+    //for each page because the fb is not necesserly continuous
+    for(int i = 0; i < FB_PAGES; i++) {
+        if(mappages(pagetable,
+                    va + (uint64)i * PGSIZE,
+                    PGSIZE,
+                    (uint64)fb[i],
+                    PTE_U | PTE_R | PTE_W) != 0) {
+
+            // Rollback: remove pages already mapped.
+            // do_free = 0 because fb[i] pages belong to the kernel/GPU.
+            if(i > 0)
+                uvmunmap(pagetable, va, i, 0);
+
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+int
+virtio_gpu_npages(void)
+{
+  return FB_PAGES;
+}
