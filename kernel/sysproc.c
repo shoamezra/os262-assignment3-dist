@@ -12,7 +12,7 @@ sys_exit(void)
   int n;
   argint(0, &n);
   exit(n);
-  return 0;  // not reached
+  return 0; // not reached
 }
 
 uint64
@@ -43,7 +43,7 @@ sys_sbrk(void)
 
   argint(0, &n);
   addr = myproc()->sz;
-  if(growproc(n) < 0)
+  if (growproc(n) < 0)
     return -1;
   return addr;
 }
@@ -57,8 +57,10 @@ sys_sleep(void)
   argint(0, &n);
   acquire(&tickslock);
   ticks0 = ticks;
-  while(ticks - ticks0 < n){
-    if(killed(myproc())){
+  while (ticks - ticks0 < n)
+  {
+    if (killed(myproc()))
+    {
       release(&tickslock);
       return -1;
     }
@@ -117,9 +119,32 @@ uint64
 sys_map_display(void)
 {
   uint64 addr;
-  argint(0,&addr);
-
-  if
+  argaddr(0, &addr);
+  struct proc *p = myproc();
+  if (p->display_mapped)
+    return -1;
+  if (addr != 0)
+  {
+    if (addr % PGSIZE != 0)
+      return -1;
+    if (is_va_range_free(p->pagetable, addr) == 0)
+    {
+      return -1;
+    }
+  }
+  else
+  {
+    addr = find_free_va_range(p->pagetable, p->sz);
+    if (addr == 0)
+    {
+      return -1;
+    }
+  }
+  if (virtio_gpu_map(p->pagetable, addr) < 0)
+  {
+    return -1;
+  }
+  p->display_va = addr;
+  p->display_mapped = 1;
+  return addr;
 }
-
-

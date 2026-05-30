@@ -505,8 +505,9 @@ void virtio_gpu_init(void)
     // gpu_cmd_attach() will also record them in attach_buf.entries[] so they
     // can be reused to restore the backing after a flip.
     static struct virtio_gpu_mem_entry fb_entries[FB_PAGES];
-    for (int i = 0; i < FB_PAGES; i++) {
-        fb_entries[i].addr   = (uint64)fb[i];
+    for (int i = 0; i < FB_PAGES; i++)
+    {
+        fb_entries[i].addr = (uint64)fb[i];
         fb_entries[i].length = PGSIZE;
     }
     gpu_cmd_attach(fb_entries, FB_PAGES);
@@ -581,20 +582,21 @@ void display_daemon(void)
 
 // TASK1
 // Map the kernel framebuffer pages into a user process page table.
-int
-virtio_gpu_map(pagetable_t pagetable, uint64 va)
+int virtio_gpu_map(pagetable_t pagetable, uint64 va)
 {
-    //for each page because the fb is not necesserly continuous
-    for(int i = 0; i < FB_PAGES; i++) {
-        if(mappages(pagetable,
-                    va + (uint64)i * PGSIZE,
-                    PGSIZE,
-                    (uint64)fb[i],
-                    PTE_U | PTE_R | PTE_W) != 0) {
+    // for each page because the fb is not necesserly continuous
+    for (int i = 0; i < FB_PAGES; i++)
+    {
+        if (mappages(pagetable,
+                     va + (uint64)i * PGSIZE,
+                     PGSIZE,
+                     (uint64)fb[i],
+                     PTE_U | PTE_R | PTE_W) != 0)
+        {
 
             // Rollback: remove pages already mapped.
             // do_free = 0 because fb[i] pages belong to the kernel/GPU.
-            if(i > 0)
+            if (i > 0)
                 uvmunmap(pagetable, va, i, 0);
 
             return -1;
@@ -602,10 +604,4 @@ virtio_gpu_map(pagetable_t pagetable, uint64 va)
     }
 
     return 0;
-}
-
-int
-virtio_gpu_npages(void)
-{
-  return FB_PAGES;
 }
