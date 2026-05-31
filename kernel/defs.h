@@ -196,5 +196,10 @@ void display_daemon(void);
 // task1
 int virtio_gpu_map(pagetable_t, uint64);
 
+// task2
+int virtio_gpu_flip(struct proc *, uint64);
+int virtio_gpu_flip(struct proc *, uint64);
+void virtio_gpu_cleanup_flip(struct proc *);
+
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))

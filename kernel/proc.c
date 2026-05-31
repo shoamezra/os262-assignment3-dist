@@ -174,6 +174,7 @@ freeproc(struct proc *p)
       p->display_va = 0;
       p->display_mapped = 0;
     }
+    virtio_gpu_cleanup_flip(p);
     proc_freepagetable(p->pagetable, p->sz);
   }
   p->pagetable = 0;

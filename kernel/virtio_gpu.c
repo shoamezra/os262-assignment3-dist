@@ -155,6 +155,9 @@ static struct
     struct virtio_gpu_mem_entry entries[FB_PAGES];
 } attach_buf;
 
+// task2
+static struct proc *flip_owner = 0;
+
 // ── Shared response buffer (reused for every command) ────────────────
 
 static struct virtio_gpu_ctrl_hdr cmd_resp;
@@ -604,4 +607,53 @@ int virtio_gpu_map(pagetable_t pagetable, uint64 va)
     }
 
     return 0;
+}
+
+int virtio_gpu_flip(struct proc *p, uint64 user_va)
+{
+    // Build the new backing entries from the user-space addresses.
+    for (int i = 0; i < FB_PAGES; i++)
+    {
+        uint64 page_va = user_va + (uint64)i * PGSIZE;
+        uint64 pa = walkaddr(p->pagetable, page_va);
+        if (pa == 0)
+        {
+            return -1;
+        }
+        attach_buf.entries[i].addr = pa;
+        attach_buf.entries[i].length = PGSIZE;
+        attach_buf.entries[i].padding = 0;
+    }
+    // Detach the old backing, attach the new one, and flush to display.
+    gpu_cmd_detach();
+    gpu_cmd_attach(attach_buf.entries, FB_PAGES);
+    flip_owner = p;
+    //! gpu_transfer_flush();
+    return 0;
+}
+
+// TASK2 cleanup
+// Restore GPU backing to the original kernel framebuffer fb[].
+static void
+virtio_gpu_restore_kernel_fb(void)
+{
+    for (int i = 0; i < FB_PAGES; i++)
+    {
+        attach_buf.entries[i].addr = (uint64)fb[i];
+        attach_buf.entries[i].length = PGSIZE;
+        attach_buf.entries[i].padding = 0;
+    }
+
+    gpu_cmd_detach();
+    gpu_cmd_attach(attach_buf.entries, FB_PAGES);
+}
+
+// If p owns the current flipped GPU backing, restore the GPU to kernel fb[].
+void virtio_gpu_cleanup_flip(struct proc *p)
+{
+    if (flip_owner == p)
+    {
+        virtio_gpu_restore_kernel_fb();
+        flip_owner = 0;
+    }
 }

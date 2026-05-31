@@ -103,7 +103,13 @@ sys_uptime(void)
 uint64
 sys_flip_display(void)
 {
-  return -1;
+  uint64 userBuffer;
+  struct proc *p = myproc();
+  argaddr(0, &userBuffer);
+  if (userBuffer == 0 || userBuffer % PGSIZE != 0)
+    return -1;
+  //-1 on failure, 0 on success.
+  return virtio_gpu_flip(p, userBuffer);
 }
 
 // sys_map_display: map the GPU's kernel framebuffer pages (fb[]) directly

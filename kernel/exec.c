@@ -128,6 +128,7 @@ int exec(char *path, char **argv)
   p->sz = sz;
   p->trapframe->epc = elf.entry; // initial program counter = main
   p->trapframe->sp = sp;         // initial stack pointer
+  virtio_gpu_cleanup_flip(p);    // if the process has a flipped display, restore the GPU to kernel fb[] and cleanup.
   if (oldpagetable && p->display_mapped)
   {
     uvmunmap(oldpagetable, p->display_va, GPU_FB_PAGES, 0);
